@@ -1,13 +1,12 @@
 """Fetches Bluesky timeline, converts it to Atom, and serves it."""
 import datetime
 import logging
-import operator
-import re
 
+from cachetools import cached, LRUCache
 from flask import Flask, request
 from flask_caching import Cache
 import flask_gae_static
-from granary import as1, atom, bluesky
+from granary import atom, bluesky
 from granary.bluesky import Bluesky
 from oauth_dropins.webutil import appengine_config, appengine_info, flask_util, util
 
@@ -28,14 +27,21 @@ if appengine_info.DEBUG:
 app.wsgi_app = flask_util.ndb_context_middleware(
     app.wsgi_app, client=appengine_config.ndb_client)
 
-cache = Cache(app)
+
+# cache access tokens in Bluesky instances
+# TODO: catch errors below and refresh when tokens expire
+# XRPC will return 400 with JSON body {'error': 'ExpiredToken'}
+# https://github.com/jesopo/bisky/blob/ed2977f75db1a7fa89f0db3d9e795d37a7f48485/src/atproto.rs#L224
+@cached(LRUCache(1000))
+def bluesky_instance(**kwargs):
+  return bluesky.Bluesky(**kwargs)
 
 
 @app.route('/feed')
-@flask_util.cached(cache, CACHE_EXPIRATION)
+@flask_util.cached(Cache(app), CACHE_EXPIRATION)
 def feed():
-  bs = Bluesky(handle=flask_util.get_required_param('handle'),
-               app_password=flask_util.get_required_param('password'))
+  bs = bluesky_instance(handle=flask_util.get_required_param('handle'),
+                        app_password=flask_util.get_required_param('password'))
   activities = bs.get_activities()
   logging.info(f'Got {len(activities)} activities')
 
