@@ -1,0 +1,67 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+  <title>Bluesky Atom feeds</title>
+  <meta name="viewport" content="width=device-width">
+  <link rel="stylesheet" href="/oauth_dropins_static/bootstrap.min.css" />
+  <link rel="stylesheet" href="/oauth_dropins_static/style.css" />
+  <link rel="stylesheet" href="/static/style.css" />
+
+<script type="text/javascript">
+function render() {
+  handle = document.getElementById("handle").value.trim();
+  password = document.getElementById("password").value.trim();
+
+  document.getElementById("link-div").style.color =
+    (handle && password) ? "black" : "lightgray";
+
+  url = window.location + "feed?handle=" + handle + "&password=" + password;
+  document.getElementById("link").innerHTML =
+    (handle && password) ? "<a href='" + url + "'>" + url + "</a>" : url;
+}
+window.onload = render;
+</script>
+</head>
+
+<body class="tp-main container lead">
+<h1>
+  <img id="logo" width="125" src="/static/logo.jpg" />
+  Bluesky Atom
+</h1>
+
+<p><b>Read your <a href="https://bsky.app/">Bluesky</a> feed in any <a href="https://indieweb.org/feed_reader">feed reader</a>!</b></p>
+
+<p>Enter your handle and password below. We strongly recommend using an <a href="https://github.com/bluesky-social/atproto-ecosystem/blob/main/app-passwords.md">app password</a> instead of your main password.</p>
+
+<br>
+
+<p>
+ <nobr>
+  <label for="handle">Handle</label>
+  <input type="text" id="handle" placeholder="you.bsky.social" onChange="render()" onKeyUp="render()" />
+ </nobr>
+ &nbsp;&nbsp;
+ <nobr>
+  <label for="password">Password</label>
+  <input type="text" id="password" placeholder="p4ssw0rd" onChange="render()" onKeyUp="render()" />
+ </nobr>
+</p>
+
+<br>
+
+<div id="link-div">
+<p>Now add this link to your feed reader, and you're done!</p>
+<p id="link"></p>
+</div>
+
+<div id="footer">
+  <a href="https://github.com/snarfed/bluesky-atom">Source</a>
+  | <a href="https://github.com/snarfed/bluesky-atom/issues">Feedback</a>
+  | <a href="https://indieweb.org/discuss">Chat</a>
+  | <a href="https://indieweb.org/">#IndieWeb</a>
+</div>
+
+</body>
+</html>

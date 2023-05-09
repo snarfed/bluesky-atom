@@ -1,0 +1,22 @@
+body {
+  margin-top: 2em;
+}
+
+h1 img {
+  vertical-align: bottom;
+}
+
+p {
+  font-size: 1.5em;
+}
+
+label {
+  font-weight: inherit;
+}
+
+#footer {
+  margin-top: 2em;
+  margin-bottom: 1em;
+  text-align: right;
+  font-size: 1em;
+}
