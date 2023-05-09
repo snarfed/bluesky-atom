@@ -8,21 +8,6 @@
   <link rel="stylesheet" href="/oauth_dropins_static/bootstrap.min.css" />
   <link rel="stylesheet" href="/oauth_dropins_static/style.css" />
   <link rel="stylesheet" href="/static/style.css" />
-
-<script type="text/javascript">
-function render() {
-  handle = document.getElementById("handle").value.trim();
-  password = document.getElementById("password").value.trim();
-
-  document.getElementById("link-div").style.color =
-    (handle && password) ? "black" : "lightgray";
-
-  url = window.location + "feed?handle=" + handle + "&password=" + password;
-  document.getElementById("link").innerHTML =
-    (handle && password) ? "<a href='" + url + "'>" + url + "</a>" : url;
-}
-window.onload = render;
-</script>
 </head>
 
 <body class="tp-main container lead">
@@ -31,30 +16,37 @@ window.onload = render;
   Bluesky Atom
 </h1>
 
-<p><b>Read your <a href="https://bsky.app/">Bluesky</a> feed in any <a href="https://indieweb.org/feed_reader">feed reader</a>!</b></p>
+<p><b>Read your <a href="https://bsky.app/">Bluesky</a> skyline (timeline) in any <a href="https://indieweb.org/feed_reader">feed reader</a>!</b></p>
 
 <p>Enter your handle and password below. We strongly recommend using an <a href="https://github.com/bluesky-social/atproto-ecosystem/blob/main/app-passwords.md">app password</a> instead of your main password.</p>
 
 <br>
 
+<form action="/generate" method="post">
 <p>
  <nobr>
   <label for="handle">Handle</label>
-  <input type="text" id="handle" placeholder="you.bsky.social" onChange="render()" onKeyUp="render()" />
+  <input type="text" name="handle" placeholder="you.bsky.social" />
  </nobr>
  &nbsp;&nbsp;
  <nobr>
   <label for="password">Password</label>
-  <input type="text" id="password" placeholder="p4ssw0rd" onChange="render()" onKeyUp="render()" />
+  <input type="password" name="password" placeholder="p4ssw0rd" />
  </nobr>
+ &nbsp;&nbsp;
+ <input type="submit" value="Go" />
 </p>
+</form>
 
 <br>
 
-<div id="link-div">
-<p>Now add this link to your feed reader, and you're done!</p>
-<p id="link"></p>
-</div>
+{% if error %}
+ <p style="color: red">Error: {{ error }}</p>
+{% else %}{% if feed %}
+ <p style="color: darkgreen">Now add this link to your feed reader, and you're done!</p>
+ <p><a href="{{ feed.url }}">{{ feed.url }}</a></p>
+{% endif %}
+{% endif %}
 
 <div id="footer">
   <a href="https://github.com/snarfed/bluesky-atom">Source</a>
@@ -62,6 +54,5 @@ window.onload = render;
   | <a href="https://indieweb.org/discuss">Chat</a>
   | <a href="https://indieweb.org/">#IndieWeb</a>
 </div>
-
 </body>
 </html>

@@ -1,16 +1,24 @@
 """Fetches Bluesky timeline, converts it to Atom, and serves it."""
 import datetime
 import logging
+from urllib.parse import urljoin
 
-from cachetools import cached, LRUCache
-from flask import Flask, request
+from cachetools import cachedmethod, TTLCache
+from cachetools.keys import hashkey
+from flask import Flask, render_template, request
 from flask_caching import Cache
 import flask_gae_static
+from google.cloud import ndb
 from granary import atom, bluesky
 from granary.bluesky import Bluesky
 from oauth_dropins.webutil import appengine_config, appengine_info, flask_util, util
+from requests.exceptions import HTTPError
 
-CACHE_EXPIRATION = datetime.timedelta(minutes=15)
+CACHE_EXPIRATION = datetime.timedelta(minutes=5)
+# access tokens currently expire in 2h, refresh tokens expire in 90d
+# https://github.com/bluesky-social/atproto/blob/5b0c2d7dd533711c17202cd61c0e101ef3a81971/packages/pds/src/auth.ts#L46
+# https://github.com/bluesky-social/atproto/blob/5b0c2d7dd533711c17202cd61c0e101ef3a81971/packages/pds/src/auth.ts#L65
+TOKEN_EXPIRATION = datetime.timedelta(hours=2)
 
 # Flask app
 app = Flask('bluesky-atom', static_folder=None)
@@ -27,28 +35,75 @@ if appengine_info.DEBUG:
 app.wsgi_app = flask_util.ndb_context_middleware(
     app.wsgi_app, client=appengine_config.ndb_client)
 
-
-# cache access tokens in Bluesky instances
-# TODO: catch errors below and refresh when tokens expire
-# XRPC will return 400 with JSON body {'error': 'ExpiredToken'}
-# https://github.com/jesopo/bisky/blob/ed2977f75db1a7fa89f0db3d9e795d37a7f48485/src/atproto.rs#L224
-@cached(LRUCache(1000))
-def bluesky_instance(**kwargs):
-  return bluesky.Bluesky(**kwargs)
+request_cache = Cache(app)
+bluesky_cache = TTLCache(maxsize=1000, ttl=TOKEN_EXPIRATION.total_seconds())
 
 
-@app.route('/feed')
-@flask_util.cached(Cache(app), CACHE_EXPIRATION)
+class Feed(ndb.Model):
+    handle = ndb.StringProperty(required=True)
+    password = ndb.StringProperty(required=True)
+
+    # cache Bluesky instances to reuse access tokens until they expire
+    # TODO: catch errors below and refresh when tokens expire?
+    # XRPC will return 400 with JSON body {'error': 'ExpiredToken'}
+    # https://github.com/jesopo/bisky/blob/ed2977f75db1a7fa89f0db3d9e795d37a7f48485/src/atproto.rs#L224
+    @cachedmethod(lambda self: bluesky_cache,
+                  key=lambda self: hashkey(self.handle, self.password))
+    def bluesky(self):
+        return bluesky.Bluesky(handle=self.handle, app_password=self.password)
+
+    @property
+    def url(self):
+        return util.add_query_params(urljoin(request.host_url, '/feed'),
+                                     {'feed_id': self.key.id()})
+
+
+@app.get('/')
+@flask_util.cached(request_cache, datetime.timedelta(days=1))
+def home():
+    return render_template('index.html')
+
+
+@app.get('/feed')
+@flask_util.cached(request_cache, CACHE_EXPIRATION)
 def feed():
-  bs = bluesky_instance(handle=flask_util.get_required_param('handle'),
-                        app_password=flask_util.get_required_param('password'))
-  activities = bs.get_activities()
-  logging.info(f'Got {len(activities)} activities')
+    feed_id = flask_util.get_required_param('feed_id')
+    if not util.is_int(feed_id):
+        flask_util.error(f'Expected integer feed_id; got {feed_id}')
 
-  # Generate output
-  return atom.activities_to_atom(
-    activities, {}, title='bluesky-atom feed',
-    host_url=request.host_url,
-    request_url=request.url,
-    xml_base=Bluesky.BASE_URL,
-  ), {'Content-Type': 'application/atom+xml'}
+    feed = Feed.get_by_id(int(feed_id))
+    activities = feed.bluesky().get_activities()
+    logging.info(f'Got {len(activities)} activities')
+
+    # Generate output
+    return atom.activities_to_atom(
+        activities, {}, title='bluesky-atom feed',
+        host_url=request.host_url,
+        request_url=request.url,
+        xml_base=Bluesky.BASE_URL,
+    ), {'Content-Type': 'application/atom+xml'}
+
+
+@app.post('/generate')
+def generate():
+    handle = flask_util.get_required_param('handle')
+    password = flask_util.get_required_param('password')
+
+    feed = Feed.query(Feed.handle == handle, Feed.password == password).get()
+    if feed:
+        return render_template('index.html', feed=feed)
+
+    feed = Feed(handle=handle, password=password)
+    try:
+        feed.bluesky()
+    except HTTPError as e:
+        try:
+            resp = e.response.json()
+            msg = resp.get('message') or resp.get('error') or str(e)
+        except ValueError:
+            msg = str(e)
+
+        return render_template('index.html', error=msg), 502
+
+    feed.put()
+    return render_template('index.html', feed=feed)
