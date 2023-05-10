@@ -14,6 +14,20 @@ label {
   font-weight: inherit;
 }
 
+input, label {
+  margin-top: .5em;
+  vertical-align: middle;
+}
+
+input[type="checkbox"] {
+  margin-right: .3em;
+  vertical-align: baseline;
+}
+
+input[type="text"], input[type="password"] {
+  margin-left: .3em;
+}
+
 #footer {
   margin-top: 2em;
   margin-bottom: 1em;

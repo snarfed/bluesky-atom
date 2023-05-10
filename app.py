@@ -9,7 +9,7 @@ from flask import Flask, render_template, request
 from flask_caching import Cache
 import flask_gae_static
 from google.cloud import ndb
-from granary import atom, bluesky
+from granary import as1, atom, bluesky
 from granary.bluesky import Bluesky
 from oauth_dropins.webutil import appengine_config, appengine_info, flask_util, util
 from requests.exceptions import HTTPError
@@ -52,10 +52,10 @@ class Feed(ndb.Model):
     def bluesky(self):
         return bluesky.Bluesky(handle=self.handle, app_password=self.password)
 
-    @property
-    def url(self):
-        return util.add_query_params(urljoin(request.host_url, '/feed'),
-                                     {'feed_id': self.key.id()})
+
+def get_bool_param(name):
+    val = request.values.get(name)
+    return val and val.strip().lower() not in ['false', 'no', 'off']
 
 
 @app.get('/')
@@ -67,12 +67,14 @@ def home():
 @app.get('/feed')
 @flask_util.cached(request_cache, CACHE_EXPIRATION)
 def feed():
-    feed_id = flask_util.get_required_param('feed_id')
+    feed_id = flask_util.get_required_param('feed_id').strip()
     if not util.is_int(feed_id):
         flask_util.error(f'Expected integer feed_id; got {feed_id}')
 
     feed = Feed.get_by_id(int(feed_id))
-    activities = feed.bluesky().get_activities()
+    activities = [a for a in feed.bluesky().get_activities()
+                  if (get_bool_param('replies') or as1.object_type(a) != 'comment')
+                  and (get_bool_param('repost') or as1.object_type(a) != 'share')]
     logging.info(f'Got {len(activities)} activities')
 
     # Generate output
@@ -86,24 +88,27 @@ def feed():
 
 @app.post('/generate')
 def generate():
-    handle = flask_util.get_required_param('handle')
-    password = flask_util.get_required_param('password')
+    handle = flask_util.get_required_param('handle').strip()
+    password = flask_util.get_required_param('password').strip()
 
     feed = Feed.query(Feed.handle == handle, Feed.password == password).get()
-    if feed:
-        return render_template('index.html', feed=feed)
-
-    feed = Feed(handle=handle, password=password)
-    try:
-        feed.bluesky()
-    except HTTPError as e:
+    if not feed:
+        feed = Feed(handle=handle, password=password)
         try:
-            resp = e.response.json()
-            msg = resp.get('message') or resp.get('error') or str(e)
-        except ValueError:
-            msg = str(e)
+            feed.bluesky()
+        except HTTPError as e:
+            try:
+                resp = e.response.json()
+                msg = resp.get('message') or resp.get('error') or str(e)
+            except ValueError:
+                msg = str(e)
+            return render_template('index.html', error=msg), 502
+        feed.put()
 
-        return render_template('index.html', error=msg), 502
+    params = {'feed_id': feed.key.id()}
+    for param in 'replies', 'reposts':
+        if get_bool_param(param):
+            params[param] = 'true'
 
-    feed.put()
-    return render_template('index.html', feed=feed)
+    feed_url = util.add_query_params(urljoin(request.host_url, '/feed'), params)
+    return render_template('index.html', feed_url=feed_url, request=request)

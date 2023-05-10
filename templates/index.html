@@ -16,7 +16,7 @@
   Bluesky Atom
 </h1>
 
-<p><b>Read your <a href="https://bsky.app/">Bluesky</a> skyline (timeline) in any <a href="https://indieweb.org/feed_reader">feed reader</a>!</b></p>
+<p><b>Read your <a href="https://bsky.app/">Bluesky</a> skyline (timeline) in any RSS/Atom <a href="https://indieweb.org/feed_reader">feed reader</a>!</b></p>
 
 <p>Enter your handle and password below. We strongly recommend using an <a href="https://github.com/bluesky-social/atproto-ecosystem/blob/main/app-passwords.md">app password</a> instead of your main password.</p>
 
@@ -26,14 +26,28 @@
 <p>
  <nobr>
   <label for="handle">Handle</label>
-  <input type="text" name="handle" placeholder="you.bsky.social" />
+  <input type="text" id="handle" name="handle" required placeholder="you.bsky.social"
+         value="{{ request.values.get('handle') }}" />
  </nobr>
  &nbsp;&nbsp;
  <nobr>
   <label for="password">Password</label>
-  <input type="password" name="password" placeholder="p4ssw0rd" />
+  <input type="password" id="password" name="password" required placeholder="p4ssw0rd"
+         value="{{ request.values.get('password') }}" />
+ </nobr>
+ <br>
+ <nobr>
+  <input type="checkbox" id="replies" name="replies"
+         {% if request.values.get('replies') in ['on', None] %} checked {% endif %} />
+  <label for="replies">Include replies</label>
  </nobr>
  &nbsp;&nbsp;
+ <nobr>
+  <input type="checkbox" id="reposts" name="reposts"
+         {% if request.values.get('reposts') in ['on', None] %} checked {% endif %} />
+  <label for="reposts">Include reposts</label>
+ </nobr>
+ <br>
  <input type="submit" value="Go" />
 </p>
 </form>
@@ -42,9 +56,10 @@
 
 {% if error %}
  <p style="color: red">Error: {{ error }}</p>
-{% else %}{% if feed %}
- <p style="color: darkgreen">Now add this link to your feed reader, and you're done!</p>
- <p><a href="{{ feed.url }}">{{ feed.url }}</a></p>
+{% else %}{% if feed_url %}
+ <p style="color: darkgreen">
+   Here's your feed URL: <a href="{{ feed_url }}">{{ feed_url }}</a>
+ </p>
 {% endif %}
 {% endif %}
 
