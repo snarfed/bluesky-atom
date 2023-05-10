@@ -27,13 +27,13 @@
  <nobr>
   <label for="handle">Handle</label>
   <input type="text" id="handle" name="handle" required placeholder="you.bsky.social"
-         value="{{ request.values.get('handle') }}" />
+         value="{{ request.values.get('handle', '') }}" />
  </nobr>
  &nbsp;&nbsp;
  <nobr>
   <label for="password">Password</label>
   <input type="password" id="password" name="password" required placeholder="p4ssw0rd"
-         value="{{ request.values.get('password') }}" />
+         value="{{ request.values.get('password', '') }}" />
  </nobr>
  <br>
  <nobr>
