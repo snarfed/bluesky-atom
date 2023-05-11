@@ -74,7 +74,7 @@ def feed():
     feed = Feed.get_by_id(int(feed_id))
     activities = [a for a in feed.bluesky().get_activities()
                   if (get_bool_param('replies') or as1.object_type(a) != 'comment')
-                  and (get_bool_param('repost') or as1.object_type(a) != 'share')]
+                  and (get_bool_param('reposts') or as1.object_type(a) != 'share')]
     logging.info(f'Got {len(activities)} activities')
 
     # Generate output
