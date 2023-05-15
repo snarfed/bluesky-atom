@@ -77,6 +77,24 @@ def feed():
                   and (get_bool_param('reposts') or as1.object_type(a) != 'share')]
     logging.info(f'Got {len(activities)} activities')
 
+    # special case myself to beta test bsky.app URL deep links into phone apps
+    # based on granary.as1.prefix_urls()
+    if feed.handle == 'snarfed.org':
+        def _update_urls(a):
+            for elem in ([a, a.get('object'), a.get('author'), a.get('actor')] +
+                         a.get('replies', {}).get('items', []) +
+                         a.get('attachments', []) + a.get('tags', [])):
+                if elem:
+                    url = elem.get('url')
+                    if url and url.startswith('https://staging.bsky.app/'):
+                        elem['url'] = url.replace('https://staging.bsky.app',
+                                                  'https://bsky.app')
+                    if elem is not a:
+                        _update_urls(elem)
+
+        for a in activities:
+            _update_urls(a)
+
     # Generate output
     return atom.activities_to_atom(
         activities, {}, title='bluesky-atom feed',
