@@ -10,7 +10,7 @@ git+https://github.com/snarfed/lexrpc.git#egg=lexrpc
 flask~=2.3.3
 flask-caching~=2.0.2
 flask-gae-static~=1.0
-google-cloud-logging~=3.7
+google-cloud-logging~=3.8
 gunicorn~=21.2
 # v4.6.0 breaks bases (which multiformats etc use)
 # https://github.com/hashberg-io/bases/issues/3
