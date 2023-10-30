@@ -3,7 +3,7 @@ import datetime
 import logging
 from urllib.parse import urljoin
 
-from cachetools import cachedmethod, TTLCache
+from cachetools import cachedmethod, LRUCache
 from cachetools.keys import hashkey
 from flask import Flask, render_template, request
 from flask_caching import Cache
@@ -36,21 +36,18 @@ app.wsgi_app = flask_util.ndb_context_middleware(
     app.wsgi_app, client=appengine_config.ndb_client)
 
 request_cache = Cache(app)
-bluesky_cache = TTLCache(maxsize=1000, ttl=TOKEN_EXPIRATION.total_seconds())
+bluesky_cache = LRUCache(maxsize=1000)
 
 
 class Feed(ndb.Model):
     handle = ndb.StringProperty(required=True)
     password = ndb.StringProperty(required=True)
 
-    # cache Bluesky instances to reuse access tokens until they expire
-    # TODO: catch errors below and refresh when tokens expire?
-    # XRPC will return 400 with JSON body {'error': 'ExpiredToken'}
-    # https://github.com/jesopo/bisky/blob/ed2977f75db1a7fa89f0db3d9e795d37a7f48485/src/atproto.rs#L224
+    # cache Bluesky instances to reuse access/refresh tokens
     @cachedmethod(lambda self: bluesky_cache,
                   key=lambda self: hashkey(self.handle, self.password))
     def bluesky(self):
-        return bluesky.Bluesky(handle=self.handle, app_password=self.password)
+        return Bluesky(handle=self.handle, app_password=self.password)
 
 
 def get_bool_param(name):
@@ -72,6 +69,9 @@ def feed():
         flask_util.error(f'Expected integer feed_id; got {feed_id}')
 
     feed = Feed.get_by_id(int(feed_id))
+    if not feed:
+        flask_util.error(f'Feed {feed_id} not found')
+
     activities = [a for a in feed.bluesky().get_activities()
                   if (get_bool_param('replies') or as1.object_type(a) != 'comment')
                   and (get_bool_param('reposts') or as1.object_type(a) != 'share')]
