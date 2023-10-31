@@ -12,6 +12,7 @@ from google.cloud import ndb
 from granary import as1, atom, bluesky
 from granary.bluesky import Bluesky
 from oauth_dropins.webutil import appengine_config, appengine_info, flask_util, util
+from oauth_dropins.webutil.models import JsonProperty
 from requests.exceptions import HTTPError
 
 CACHE_EXPIRATION = datetime.timedelta(minutes=5)
@@ -42,12 +43,22 @@ bluesky_cache = LRUCache(maxsize=1000)
 class Feed(ndb.Model):
     handle = ndb.StringProperty(required=True)
     password = ndb.StringProperty(required=True)
+    session = JsonProperty(default={})
 
     # cache Bluesky instances to reuse access/refresh tokens
     @cachedmethod(lambda self: bluesky_cache,
                   key=lambda self: hashkey(self.handle, self.password))
     def bluesky(self):
-        return Bluesky(handle=self.handle, app_password=self.password)
+        def store_session(session):
+            logging.info(f'Storing Bluesky session for {self.key.id()}: {session}')
+            self.session = session
+            self.put()
+
+        return Bluesky(handle=self.handle, app_password=self.password,
+                       access_token=self.session.get('accessJwt'),
+                       refresh_token=self.session.get('refreshJwt'),
+                       session_callback=store_session)
+
 
 
 def get_bool_param(name):
