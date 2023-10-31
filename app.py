@@ -72,9 +72,15 @@ def feed():
     if not feed:
         flask_util.error(f'Feed {feed_id} not found')
 
-    activities = [a for a in feed.bluesky().get_activities()
-                  if (get_bool_param('replies') or as1.object_type(a) != 'comment')
-                  and (get_bool_param('reposts') or as1.object_type(a) != 'share')]
+    activities = []
+    for a in feed.bluesky().get_activities():
+        type = as1.object_type(a)
+        if type in ('post', 'update'):
+            type = as1.object_type(as1.get_object(a))
+        if ((get_bool_param('replies') or type != 'comment')
+            and (get_bool_param('reposts') or type != 'share')):
+            activities.append(a)
+        util.d(a, type)
     logging.info(f'Got {len(activities)} activities')
 
     # Generate output
