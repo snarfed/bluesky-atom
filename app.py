@@ -31,7 +31,7 @@ app.config.from_mapping(
 )
 app.after_request(flask_util.default_modern_headers)
 app.register_error_handler(Exception, flask_util.handle_exception)
-if appengine_info.DEBUG:
+if appengine_info.DEBUG or appengine_info.LOCAL_SERVER:
     flask_gae_static.init_app(app)
 app.wsgi_app = flask_util.ndb_context_middleware(
     app.wsgi_app, client=appengine_config.ndb_client)
@@ -50,7 +50,7 @@ class Feed(ndb.Model):
                   key=lambda self: hashkey(self.handle, self.password))
     def bluesky(self):
         def store_session(session):
-            logging.info(f'Storing Bluesky session for {self.key.id()}: {session}')
+            logging.info(f'Storing Bluesky session for {self.handle}: {session}')
             self.session = session
             self.put()
 
