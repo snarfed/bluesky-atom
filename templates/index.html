@@ -27,6 +27,17 @@
 
 <br>
 
+{% if error %}
+ <p style="color: red">Error: {{ error }}</p>
+ <br>
+{% else %}{% if feed_url %}
+ <p style="color: darkgreen">
+   Here's your feed URL: <a href="{{ feed_url }}">{{ feed_url }}</a>
+ </p>
+ <br>
+{% endif %}
+{% endif %}
+
 <form action="/generate" method="post">
 <p>
  <nobr>
@@ -58,15 +69,6 @@
 </form>
 
 <br>
-
-{% if error %}
- <p style="color: red">Error: {{ error }}</p>
-{% else %}{% if feed_url %}
- <p style="color: darkgreen">
-   Here's your feed URL: <a href="{{ feed_url }}">{{ feed_url }}</a>
- </p>
-{% endif %}
-{% endif %}
 
 <div id="footer">
   <a href="https://github.com/snarfed/bluesky-atom">Source</a>
