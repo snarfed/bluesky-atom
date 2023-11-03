@@ -105,7 +105,7 @@ def feed():
 
 @app.post('/generate')
 def generate():
-    handle = flask_util.get_required_param('handle').strip()
+    handle = flask_util.get_required_param('handle').strip().lower()
     password = flask_util.get_required_param('password').strip()
 
     feed = Feed.query(Feed.handle == handle, Feed.password == password).get()
