@@ -91,7 +91,6 @@ def feed():
         if ((get_bool_param('replies') or type != 'comment')
             and (get_bool_param('reposts') or type != 'share')):
             activities.append(a)
-        util.d(a, type)
     logging.info(f'Got {len(activities)} activities')
 
     # Generate output
