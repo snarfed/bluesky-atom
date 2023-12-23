@@ -12,6 +12,3 @@ flask-caching~=2.0.2
 flask-gae-static~=1.0
 google-cloud-logging~=3.7
 gunicorn~=21.2
-# v4.6.0 breaks bases (which multiformats etc use)
-# https://github.com/hashberg-io/bases/issues/3
-typing-extensions==4.5.0
