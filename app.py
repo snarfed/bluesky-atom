@@ -64,13 +64,13 @@ def get_bool_param(name):
 
 
 @app.get('/')
-@flask_util.headers({'Cache-Control': 'public, max-age: 86400'})
+@flask_util.headers({'Cache-Control': 'public, max-age=86400'})
 def home():
     return render_template('index.html')
 
 
 @app.get('/feed')
-@flask_util.headers({'Cache-Control': 'public, max-age: 300'})
+@flask_util.headers({'Cache-Control': 'public, max-age=300'})
 def feed():
     feed_id = flask_util.get_required_param('feed_id').strip()
     if not util.is_int(feed_id):
