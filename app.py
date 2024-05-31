@@ -6,7 +6,6 @@ from urllib.parse import urljoin
 from cachetools import cachedmethod, LRUCache
 from cachetools.keys import hashkey
 from flask import Flask, render_template, request
-from flask_caching import Cache
 import flask_gae_static
 from google.cloud import ndb
 from granary import as1, atom, bluesky
@@ -15,7 +14,6 @@ from oauth_dropins.webutil import appengine_config, appengine_info, flask_util, 
 from oauth_dropins.webutil.models import JsonProperty
 from requests.exceptions import HTTPError
 
-CACHE_EXPIRATION = datetime.timedelta(minutes=5)
 # access tokens currently expire in 2h, refresh tokens expire in 90d
 # https://github.com/bluesky-social/atproto/blob/5b0c2d7dd533711c17202cd61c0e101ef3a81971/packages/pds/src/auth.ts#L46
 # https://github.com/bluesky-social/atproto/blob/5b0c2d7dd533711c17202cd61c0e101ef3a81971/packages/pds/src/auth.ts#L65
@@ -36,7 +34,6 @@ if appengine_info.DEBUG or appengine_info.LOCAL_SERVER:
 app.wsgi_app = flask_util.ndb_context_middleware(
     app.wsgi_app, client=appengine_config.ndb_client)
 
-request_cache = Cache(app)
 bluesky_cache = LRUCache(maxsize=1000)
 
 
@@ -67,13 +64,13 @@ def get_bool_param(name):
 
 
 @app.get('/')
-@flask_util.cached(request_cache, datetime.timedelta(days=1))
+@flask_util.headers({'Cache-Control': 'public, max-age: 86400'})
 def home():
     return render_template('index.html')
 
 
 @app.get('/feed')
-@flask_util.cached(request_cache, CACHE_EXPIRATION)
+@flask_util.headers({'Cache-Control': 'public, max-age: 300'})
 def feed():
     feed_id = flask_util.get_required_param('feed_id').strip()
     if not util.is_int(feed_id):
