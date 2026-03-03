@@ -6,6 +6,7 @@
   <title>Bluesky Atom feeds</title>
   <meta name="viewport" content="width=device-width">
   <link rel="stylesheet" href="/oauth_dropins_static/bootstrap.min.css" />
+  <link rel="stylesheet" href="/oauth_dropins_static/util.css" />
   <link rel="stylesheet" href="/oauth_dropins_static/style.css" />
   <link rel="stylesheet" href="/static/style.css" />
   <link rel="shortcut icon" sizes="128x128" href="/static/logo_128.png">
@@ -23,50 +24,22 @@
 
 <p><b>Read your <a href="https://bsky.app/">Bluesky</a> timeline, ie posts from everyone you follow, in any RSS/Atom <a href="https://indieweb.org/feed_reader">feed reader</a>!</b></p>
 
-<p>Enter your handle and password below. We strongly recommend using an <a href="https://github.com/bluesky-social/atproto-ecosystem/blob/main/app-passwords.md">app password</a> instead of your main password.</p>
+<p>Enter your handle below and log in with Bluesky to generate your feed URL.</p>
 
 <br>
 
 {% if error %}
- <p style="color: red">Error: {{ error }}</p>
+ <p style="text-align: center; color: red">Error: {{ error }}</p>
  <br>
 {% else %}{% if feed_url %}
- <p style="color: darkgreen">
-   Here's your feed URL: <a href="{{ feed_url }}">{{ feed_url }}</a>
+ <p style="text-align: center; color: darkgreen">
+   Here's your feed URL:<br><a href="{{ feed_url }}">{{ feed_url }}</a>
  </p>
  <br>
 {% endif %}
 {% endif %}
 
-<form action="/generate" method="post">
-<p>
- <nobr>
-  <label for="handle">Handle</label>
-  <input type="text" id="handle" name="handle" required placeholder="you.bsky.social"
-         value="{{ request.values.get('handle', '') }}" />
- </nobr>
- &nbsp;&nbsp;
- <nobr>
-  <label for="password">Password</label>
-  <input type="password" id="password" name="password" required placeholder="p4ssw0rd"
-         value="{{ request.values.get('password', '') }}" />
- </nobr>
- <br>
- <nobr>
-  <input type="checkbox" id="replies" name="replies"
-         {% if request.values.get('replies') in ['on', None] %} checked {% endif %} />
-  <label for="replies">Include replies</label>
- </nobr>
- &nbsp;&nbsp;
- <nobr>
-  <input type="checkbox" id="reposts" name="reposts"
-         {% if request.values.get('reposts') in ['on', None] %} checked {% endif %} />
-  <label for="reposts">Include reposts</label>
- </nobr>
- <br>
- <input type="submit" value="Go" />
-</p>
-</form>
+{{ bluesky_button|safe }}
 
 <br>
 
