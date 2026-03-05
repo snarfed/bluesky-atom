@@ -33,7 +33,7 @@
  <br>
 {% else %}{% if feed_url %}
  <p style="text-align: center; color: darkgreen">
-   Here's your feed URL:<br><a href="{{ feed_url }}">{{ feed_url }}</a>
+   Here's your feed URL:<br><a href="{{ feed_url|safe }}">{{ feed_url }}</a>
  </p>
  <br>
 {% endif %}

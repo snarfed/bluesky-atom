@@ -12,9 +12,10 @@ from oauth_dropins.bluesky import BlueskyAuth
 from oauth_dropins.webutil import appengine_config, appengine_info, flask_util, util
 from oauth_dropins.webutil.models import JsonProperty
 from oauth_dropins.webutil.util import json_loads
-from requests_oauth2client import OAuth2AccessTokenAuth, TokenSerializer
 
 DOMAIN = 'bluesky-atom.appspot.com'
+
+util.set_user_agent(f'Bluesky Atom (https://{DOMAIN}/)')
 
 # Flask app
 app = Flask('bluesky-atom', static_folder=None)
@@ -81,43 +82,14 @@ class BlueskyCallback(oauth_dropins.bluesky.OAuthCallback):
 
         handle = json_loads(auth.user_json)['handle']
         if not (feed := Feed.query(Feed.handle == handle).get()):
-            feed = Feed(handle=handle)
+            feed = Feed(handle=handle, session={'did': auth.key.id()})
             feed.put()
 
-        feed_url = urljoin(request.host_url, f'/feed?feed_id={feed.key.id()}&{state}')
+        feed_url = urljoin(request.host_url, f'/feed?feed_id={feed.key.id()}')
+        if state:
+            feed_url += f'&{state}'
+
         return render_template('index.html', feed_url=feed_url)
-
-
-def get_client(auth_entity):
-    did = auth_entity.key.id()
-    handle = json_loads(auth_entity.user_json).get('handle')
-    pds_url = auth_entity.pds_url or 'https://bsky.social'
-
-    if auth_entity.dpop_token:  # OAuth
-        def callback(auth):
-            serialized = TokenSerializer().dumps(auth.token)
-            if serialized != auth_entity.dpop_token:
-                logging.info(f'Storing DPoP token for {auth_entity.key.id()}')
-                auth_entity.dpop_token = serialized
-                auth_entity.put()
-
-        oauth_client = oauth_dropins.bluesky.oauth_client_for_pds(
-            client_metadata(), pds_url)
-        token = TokenSerializer().loads(auth_entity.dpop_token)
-        return Bluesky(handle=handle, pds_url=pds_url, session_callback=callback,
-                       auth=OAuth2AccessTokenAuth(client=oauth_client, token=token))
-
-    else:  # app password based
-        def callback(session):
-            if session != auth_entity.session:
-                logging.info(f'Storing session for {auth_entity.key.id()}: {session}')
-                auth_entity.session = session
-                auth_entity.put()
-
-        assert auth_entity.session
-        return Bluesky(handle=handle, pds_url=pds_url, session_callback=callback,
-                       access_token=auth_entity.session.get('accessJwt'),
-                       refresh_token=auth_entity.session.get('refreshJwt'))
 
 
 def get_bool_param(name):
@@ -160,8 +132,9 @@ def feed():
     if not (auth := BlueskyAuth.get_by_id(did)):
         flask_util.error(f'User {did} not found')
 
+    client = Bluesky.from_auth(auth, client_metadata())
     activities = []
-    for a in get_client(auth).get_activities():
+    for a in client.get_activities():
         type = as1.object_type(a)
         if type in ('post', 'update'):
             type = as1.object_type(as1.get_object(a))
