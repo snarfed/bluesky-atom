@@ -7,6 +7,8 @@
 git+https://github.com/snarfed/oauth-dropins.git#egg=oauth_dropins
 git+https://github.com/snarfed/granary.git#egg=granary
 git+https://github.com/snarfed/lexrpc.git#egg=lexrpc
+git+https://github.com/snarfed/mox3.git#egg=mox3
+
 flask~=3.0.3
 flask-caching~=2.3.0
 flask-gae-static~=1.0
