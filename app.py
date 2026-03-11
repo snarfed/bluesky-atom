@@ -56,6 +56,12 @@ class BlueskyStart(oauth_dropins.bluesky.OAuthStart):
     def CLIENT_METADATA(self):
         return client_metadata()
 
+    def dispatch_request(self):
+        try:
+            return super().dispatch_request()
+        except ValueError as e:
+            return render_template('index.html', error=str(e))
+
     def redirect_url(self, state=None, handle=None):
         parts = []
         if request.values.get('replies'):
