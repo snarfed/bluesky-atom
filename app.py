@@ -1,7 +1,9 @@
 """Fetches Bluesky timeline, converts it to Atom, and serves it."""
 import logging
-from urllib.parse import parse_qsl, urljoin
+from urllib.parse import urljoin
 
+from cachetools import cachedmethod, LRUCache
+from cachetools.keys import hashkey
 from flask import Flask, render_template, request
 import flask_gae_static
 from google.cloud import ndb
@@ -12,6 +14,7 @@ from oauth_dropins.bluesky import BlueskyAuth
 from oauth_dropins.webutil import appengine_config, appengine_info, flask_util, util
 from oauth_dropins.webutil.models import JsonProperty
 from oauth_dropins.webutil.util import json_loads
+from requests.exceptions import HTTPError
 
 DOMAIN = 'bluesky-atom.appspot.com'
 
@@ -32,6 +35,8 @@ if appengine_info.DEBUG or appengine_info.LOCAL_SERVER:
 app.wsgi_app = flask_util.ndb_context_middleware(
     app.wsgi_app, client=appengine_config.ndb_client)
 
+bluesky_cache = LRUCache(maxsize=1000)
+
 
 class Feed(ndb.Model):
     handle = ndb.StringProperty(required=True)
@@ -39,6 +44,27 @@ class Feed(ndb.Model):
     session = JsonProperty(default={})
     created = ndb.DateTimeProperty(auto_now_add=True)
     updated = ndb.DateTimeProperty(auto_now=True)
+
+    # cache Bluesky instances to reuse access/refresh tokens
+    @cachedmethod(lambda self: bluesky_cache,
+                  key=lambda self, did: hashkey(self.handle or did, self.password))
+    def bluesky(self, did):
+        def store_session(session):
+            logging.info(f'Storing Bluesky session for {self.handle}: {session}')
+            self.session = session
+            self.put()
+
+        if self.handle and self.password:
+            # app password
+            return Bluesky(handle=self.handle, app_password=self.password,
+                           access_token=self.session.get('accessJwt'),
+                           refresh_token=self.session.get('refreshJwt'),
+                           session_callback=store_session)
+        else:
+            # OAuth
+            if not (auth := BlueskyAuth.get_by_id(did)):
+                flask_util.error(f'User {did} not found')
+            return Bluesky.from_auth(auth, client_metadata())
 
 
 def client_metadata():
@@ -137,10 +163,7 @@ def feed():
             or not (did := feed.session.get('did'))):
         flask_util.error(f'Feed {feed_id} not found')
 
-    if not (auth := BlueskyAuth.get_by_id(did)):
-        flask_util.error(f'User {did} not found')
-
-    client = Bluesky.from_auth(auth, client_metadata())
+    client = feed.bluesky(did)
     activities = []
     for a in client.get_activities():
         type = as1.object_type(a)
@@ -157,6 +180,34 @@ def feed():
         request_url=request.url,
         xml_base=Bluesky.BASE_URL,
     ), {'Content-Type': 'application/atom+xml'}
+
+
+@app.post('/generate')
+def generate():
+    handle = flask_util.get_required_param('handle').strip().lower()
+    password = flask_util.get_required_param('password').strip()
+
+    feed = Feed.query(Feed.handle == handle, Feed.password == password).get()
+    if not feed:
+        feed = Feed(handle=handle, password=password)
+        try:
+            feed.bluesky()
+        except HTTPError as e:
+            try:
+                resp = e.response.json()
+                msg = resp.get('message') or resp.get('error') or str(e)
+            except ValueError:
+                msg = str(e)
+            return render_template('index.html', error=msg), 502
+        feed.put()
+
+    params = {'feed_id': feed.key.id()}
+    for param in 'replies', 'reposts':
+        if get_bool_param(param):
+            params[param] = 'true'
+
+    feed_url = util.add_query_params(urljoin(request.host_url, '/feed'), params)
+    return render_template('index.html', feed_url=feed_url, request=request)
 
 
 app.add_url_rule('/oauth/bluesky/start',

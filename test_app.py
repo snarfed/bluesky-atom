@@ -111,6 +111,8 @@ class BlueskyAtomTest(unittest.TestCase, Asserts):
         self.feed = Feed(id=123, handle='alice.net', session={'did': 'did:plc:alice'})
         self.feed.put()
 
+        Feed.bluesky.cache_clear(self.feed)
+
     def tearDown(self):
         self.client.__exit__(None, None, None)
         self.ndb_context.__exit__(None, None, None)
