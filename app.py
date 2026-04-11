@@ -37,6 +37,8 @@ class Feed(ndb.Model):
     handle = ndb.StringProperty(required=True)
     password = ndb.StringProperty()
     session = JsonProperty(default={})
+    created = ndb.DateTimeProperty(auto_now_add=True)
+    updated = ndb.DateTimeProperty(auto_now=True)
 
 
 def client_metadata():
