@@ -64,6 +64,12 @@
          {% if request.values.get('reposts') in ['on', None] %} checked {% endif %} />
   <label for="reposts">Include reposts</label>
  </nobr>
+ &nbsp;&nbsp;
+ <nobr>
+  <input type="checkbox" id="notifications" name="notifications"
+         {% if request.values.get('notifications') == 'on' %} checked {% endif %} />
+  <label for="notifications">Include notifications (replies, quotes, mentions)</label>
+ </nobr>
  <br>
  <input type="submit" value="Go" />
 </p>

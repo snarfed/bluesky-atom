@@ -27,6 +27,25 @@ from requests_oauth2client import (
 
 from app import app, BlueskyCallback, BlueskyStart, Feed
 
+MENTION_NOTIF_BSKY = {
+  'uri': 'at://did:pl:bob/app.bsky.feed.post/notif-tid',
+  'cid': 'bafybobnotif',
+  'author': {
+    '$type': 'app.bsky.actor.defs#profileView',
+    'did': 'did:pl:bob',
+    'handle': 'bob.bsky.social',
+    'displayName': 'Bob',
+  },
+  'reason': 'mention',
+  'record': {
+    '$type': 'app.bsky.feed.post',
+    'text': 'hey @alice check this out',
+    'createdAt': '2009-09-09T03:04:05.000Z',
+  },
+  'isRead': False,
+  'indexedAt': '2009-09-09T03:04:05.000Z',
+}
+
 DPOP_TOKEN = DPoPToken(access_token='towkin', _dpop_key=DPoPKey.generate())
 DPOP_TOKEN_STR = TokenSerializer().dumps(DPOP_TOKEN)
 
@@ -212,3 +231,23 @@ class BlueskyAtomTest(unittest.TestCase, Asserts):
         body = resp.get_data(as_text=True)
         self.assertIn(REPLY_BSKY_FEED_VIEW_POST['post']['record']['text'], body)
         self.assertIn(REPOST_BSKY_FEED_VIEW_POST['post']['record']['text'], body)
+
+    @patch('requests.get', side_effect=[
+      requests_response({'feed': [POST_FEED_VIEW_BSKY]}),
+      requests_response({'notifications': [MENTION_NOTIF_BSKY]}),
+    ])
+    def test_feed_with_notifications(self, mock_get):
+        resp = self.client.get('/feed?feed_id=123&notifications=true')
+        self.assertEqual(200, resp.status_code)
+        body = resp.get_data(as_text=True)
+        self.assertIn(POST_FEED_VIEW_BSKY['post']['record']['text'], body)
+        self.assertIn(MENTION_NOTIF_BSKY['record']['text'], body)
+
+    @patch.object(OAuthStart, 'redirect_url', return_value='https://pds.com/auth')
+    def test_redirect_url_state_includes_notifications(self, mock_redirect_url):
+        self.client.post('/oauth/bluesky/start', data={
+            'handle': 'alice.bsky.social',
+            'notifications': 'on',
+        })
+        mock_redirect_url.assert_called_once_with(state='notifications=true',
+                                                  handle=None)

@@ -8,7 +8,7 @@ from flask import Flask, render_template, request
 import flask_gae_static
 from google.cloud import ndb
 from granary import as1, atom
-from granary.bluesky import Bluesky
+from granary.bluesky import Bluesky, to_as1
 import oauth_dropins.bluesky
 from oauth_dropins.bluesky import BlueskyAuth
 from oauth_dropins.webutil import appengine_config, appengine_info, flask_util, util
@@ -96,6 +96,8 @@ class BlueskyStart(oauth_dropins.bluesky.OAuthStart):
             parts.append('replies=true')
         if request.values.get('reposts'):
             parts.append('reposts=true')
+        if request.values.get('notifications'):
+            parts.append('notifications=true')
         return super().redirect_url(state='&'.join(parts) or None, handle=handle)
 
 
@@ -165,13 +167,42 @@ def feed():
 
     client = feed.bluesky(did)
     activities = []
+    seen_ids = set()
+
     for a in client.get_activities():
         type = as1.object_type(a)
         if type in ('post', 'update'):
             type = as1.object_type(as1.get_object(a))
         if ((get_bool_param('replies') or type != 'comment')
             and (get_bool_param('reposts') or type != 'share')):
+            id = as1.get_object(a).get('id') or a.get('id')
+            seen_ids.add(id)
             activities.append(a)
+
+    if get_bool_param('notifications'):
+        resp = client.client.app.bsky.notification.listNotifications(
+            reasons=['reply', 'quote', 'mention'], limit=20)
+        for notif in resp.get('notifications', []):
+            author = notif['author']
+            obj = to_as1(notif['record'], uri=notif['uri'],
+                         repo_did=author['did'],
+                         repo_handle=author.get('handle'))
+            if not obj or notif['uri'] in seen_ids:
+                continue
+            author_as1 = to_as1(author, type='app.bsky.actor.defs#profileView')
+            obj['author'] = author_as1
+            activities.append({
+                'id': obj.get('id'),
+                'verb': 'post',
+                'actor': author_as1,
+                'object': obj,
+                'objectType': 'activity',
+            })
+
+    activities.sort(
+        key=lambda a: as1.get_object(a).get('published') or a.get('published') or '',
+        reverse=True,
+    )
     logging.info(f'Got {len(activities)} activities')
 
     return atom.activities_to_atom(
@@ -202,7 +233,7 @@ def generate():
         feed.put()
 
     params = {'feed_id': feed.key.id()}
-    for param in 'replies', 'reposts':
+    for param in 'replies', 'reposts', 'notifications':
         if get_bool_param(param):
             params[param] = 'true'
 
