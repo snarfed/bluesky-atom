@@ -9,6 +9,7 @@ from granary.tests.test_bluesky import (
     REPOST_BSKY_FEED_VIEW_POST,
 )
 from oauth_dropins.bluesky import BlueskyAuth, OAuthStart
+from oauth_dropins.webutil import util
 from oauth_dropins.webutil.appengine_config import ndb_client
 from oauth_dropins.webutil.testutil import (
     Asserts,
@@ -191,7 +192,7 @@ class BlueskyAtomTest(unittest.TestCase, Asserts):
     @patch('oauth_dropins.bluesky.oauth_client_for_pds',
            return_value=OAuth2Client(token_endpoint='https://un/used',
                                      client_id='unused', client_secret='unused'))
-    @patch('requests.get', return_value=requests_response({
+    @patch.object(util.session, 'get', return_value=requests_response({
       'feed': [POST_FEED_VIEW_BSKY, REPOST_BSKY_FEED_VIEW_POST],
     }))
     def test_feed_dpop(self, mock_get, _):
@@ -204,7 +205,7 @@ class BlueskyAtomTest(unittest.TestCase, Asserts):
         self.assert_multiline_equals(ATOM, resp.data.decode(), ignore_blanks=True)
         self.assertEqual(DPOP_TOKEN, mock_get.call_args.kwargs['auth'].token)
 
-    @patch('requests.get', return_value=requests_response({
+    @patch.object(util.session, 'get', return_value=requests_response({
       'feed': [POST_FEED_VIEW_BSKY, REPOST_BSKY_FEED_VIEW_POST],
     }))
     def test_feed_dpop_session(self, mock_get):
@@ -222,7 +223,7 @@ class BlueskyAtomTest(unittest.TestCase, Asserts):
         resp = self.client.get('/feed?feed_id=9999')
         self.assertEqual(400, resp.status_code)
 
-    @patch('requests.get', return_value=requests_response({
+    @patch.object(util.session, 'get', return_value=requests_response({
       'feed': [REPLY_BSKY_FEED_VIEW_POST, REPOST_BSKY_FEED_VIEW_POST],
     }))
     def test_feed_with_replies_reposts(self, mock_get):
@@ -232,7 +233,7 @@ class BlueskyAtomTest(unittest.TestCase, Asserts):
         self.assertIn(REPLY_BSKY_FEED_VIEW_POST['post']['record']['text'], body)
         self.assertIn(REPOST_BSKY_FEED_VIEW_POST['post']['record']['text'], body)
 
-    @patch('requests.get', side_effect=[
+    @patch.object(util.session, 'get', side_effect=[
       requests_response({'feed': [POST_FEED_VIEW_BSKY]}),
       requests_response({'notifications': [MENTION_NOTIF_BSKY]}),
     ])
