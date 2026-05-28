@@ -11,10 +11,10 @@ from granary import as1, atom
 from granary.bluesky import Bluesky, to_as1
 import oauth_dropins.bluesky
 from oauth_dropins.bluesky import BlueskyAuth
-from oauth_dropins.webutil import appengine_config, appengine_info, flask_util, util
-from oauth_dropins.webutil.models import JsonProperty
-from oauth_dropins.webutil.util import json_loads
 from requests.exceptions import HTTPError
+from webutil import appengine_config, appengine_info, flask_util, util
+from webutil.models import JsonProperty
+from webutil.util import json_loads
 
 DOMAIN = 'bluesky-atom.appspot.com'
 

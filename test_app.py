@@ -9,14 +9,6 @@ from granary.tests.test_bluesky import (
     REPOST_BSKY_FEED_VIEW_POST,
 )
 from oauth_dropins.bluesky import BlueskyAuth, OAuthStart
-from oauth_dropins.webutil import util
-from oauth_dropins.webutil.appengine_config import ndb_client
-from oauth_dropins.webutil.testutil import (
-    Asserts,
-    requests_response,
-    suppress_warnings,
-)
-from oauth_dropins.webutil.util import json_dumps
 import requests
 from requests_oauth2client import (
   DPoPKey,
@@ -25,6 +17,14 @@ from requests_oauth2client import (
   OAuth2Client,
   TokenSerializer,
 )
+from webutil import util
+from webutil.appengine_config import ndb_client
+from webutil.testutil import (
+    Asserts,
+    requests_response,
+    suppress_warnings,
+)
+from webutil.util import json_dumps
 
 from app import app, BlueskyCallback, BlueskyStart, Feed
 
