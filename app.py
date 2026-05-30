@@ -161,11 +161,10 @@ def feed():
     if not util.is_int(feed_id):
         flask_util.error(f'Expected integer feed_id; got {feed_id}')
 
-    if (not (feed := Feed.get_by_id(int(feed_id)))
-            or not (did := feed.session.get('did'))):
+    if not (feed := Feed.get_by_id(int(feed_id))):
         flask_util.error(f'Feed {feed_id} not found')
 
-    client = feed.bluesky(did)
+    client = feed.bluesky(feed.session.get('did'))
     activities = []
     seen_ids = set()
 
