@@ -222,7 +222,7 @@ def generate():
     if not feed:
         feed = Feed(handle=handle, password=password)
         try:
-            feed.bluesky()
+            feed.bluesky(None)
         except HTTPError as e:
             try:
                 resp = e.response.json()
