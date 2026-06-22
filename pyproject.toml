@@ -2,7 +2,9 @@
 name = 'bluesky-atom'
 version = '1.0'
 requires-python = '>=3.12'
-dependencies = [
+
+[project.optional-dependencies]
+app = [
     'cachetools>=5.0.0',
     'flask>=3.0.0',
     'flask-gae-static>=1.0',
@@ -14,8 +16,6 @@ dependencies = [
     'requests>=2.22',
     'ujson>=5.7.0',
 ]
-
-[project.optional-dependencies]
 tests = [
     'mox3 @ git+https://github.com/snarfed/mox3.git',
     'requests-oauth2client>=1.8.0',
