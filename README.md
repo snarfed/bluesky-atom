@@ -12,4 +12,5 @@ Development
 ---
 1. Fork and clone this repo.
 1. `pip install -r requirements.txt`, optionally in a virtualenv.
+   (Alternatively, if you use `uv`, pass it `--no-sources`.)
 1. `flask run --debug -p 8080`

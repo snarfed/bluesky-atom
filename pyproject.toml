@@ -1,0 +1,46 @@
+[project]
+name = 'bluesky-atom'
+version = '1.0'
+requires-python = '>=3.12'
+dependencies = [
+    'cachetools>=5.0.0',
+    'flask>=3.0.0',
+    'flask-gae-static>=1.0',
+    'google-cloud-ndb>=1.10.1',
+    'gunicorn>=20.1.0',
+    'granary @ git+https://github.com/snarfed/granary.git',
+    'oauth-dropins @ git+https://github.com/snarfed/oauth-dropins.git',
+    'pywebutil[google-cloud,html] @ git+https://github.com/snarfed/webutil.git',
+    'requests>=2.22',
+    'ujson>=5.7.0',
+]
+
+[project.optional-dependencies]
+tests = [
+    'mox3 @ git+https://github.com/snarfed/mox3.git',
+    'requests-oauth2client>=1.8.0',
+    'werkzeug>=3.0.0',
+]
+
+[tool.uv]
+package = false
+
+[tool.uv.sources]
+arroba =            { editable = true, path = "../arroba" }
+brevity =           { editable = true, path = "../brevity" }
+granary =           { editable = true, path = '../granary' }
+lexrpc =            { editable = true, path = "../lexrpc" }
+mox3 =              { editable = true, path = "../mox3" }
+oauth-dropins =     { editable = true, path = "../oauth-dropins" }
+pywebutil =         { editable = true, path = "../webutil" }
+secp256k1 =         { editable = true, path = "../secp256k1-py" }
+
+[tool.uv.pip]
+# this is in ~/.config/uv/uv.toml
+
+[tool.deptry.per_rule_ignores]
+DEP002 = [
+    'gunicorn',
+    'mox3',
+    'ujson',
+]
