@@ -1,3 +1,7 @@
+# bluesky-atom is an application, not a packaged library, so this file is just
+# for managing dependencies. Use uv compile to compile the direct dependencies
+# here to the complete pinned list in requirements.pinned.txt.
+
 [project]
 name = 'bluesky-atom'
 version = '1.0'
@@ -5,14 +9,18 @@ requires-python = '>=3.12'
 
 [project.optional-dependencies]
 app = [
+    # our own packages, used at head via the editable local checkouts in
+    # [tool.uv.sources]; the deploy-time git refs are in requirements.txt
+    'flask-gae-static',
+    'granary',
+    'oauth-dropins',
+    'pywebutil[google-cloud,html]',
+
+    # third-party
     'cachetools>=5.0.0',
     'flask>=3.0.0',
-    'flask-gae-static>=1.0',
     'google-cloud-ndb>=1.10.1',
     'gunicorn>=20.1.0',
-    'granary @ git+https://github.com/snarfed/granary.git',
-    'oauth-dropins @ git+https://github.com/snarfed/oauth-dropins.git',
-    'pywebutil[google-cloud,html] @ git+https://github.com/snarfed/webutil.git',
     'requests>=2.22',
     'ujson>=5.7.0',
 ]
@@ -28,8 +36,11 @@ package = false
 [tool.uv.sources]
 arroba =            { editable = true, path = "../arroba" }
 brevity =           { editable = true, path = "../brevity" }
+carbox =            { editable = true, path = "../carbox" }
+flask-gae-static =  { editable = true, path = "../flask-gae-static" }
 granary =           { editable = true, path = '../granary' }
 lexrpc =            { editable = true, path = "../lexrpc" }
+mf2util =           { editable = true, path = "../mf2util" }
 mox3 =              { editable = true, path = "../mox3" }
 oauth-dropins =     { editable = true, path = "../oauth-dropins" }
 pywebutil =         { editable = true, path = "../webutil" }
