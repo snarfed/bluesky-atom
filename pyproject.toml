@@ -25,7 +25,6 @@ app = [
     'ujson>=5.7.0',
 ]
 tests = [
-    'mox3 @ git+https://github.com/snarfed/mox3.git',
     'requests-oauth2client>=1.8.0',
     'werkzeug>=3.0.0',
 ]
@@ -41,7 +40,6 @@ flask-gae-static =  { editable = true, path = "../flask-gae-static" }
 granary =           { editable = true, path = '../granary' }
 lexrpc =            { editable = true, path = "../lexrpc" }
 mf2util =           { editable = true, path = "../mf2util" }
-mox3 =              { editable = true, path = "../mox3" }
 oauth-dropins =     { editable = true, path = "../oauth-dropins" }
 pywebutil =         { editable = true, path = "../webutil" }
 secp256k1 =         { editable = true, path = "../secp256k1-py" }
@@ -52,6 +50,5 @@ secp256k1 =         { editable = true, path = "../secp256k1-py" }
 [tool.deptry.per_rule_ignores]
 DEP002 = [
     'gunicorn',
-    'mox3',
     'ujson',
 ]
