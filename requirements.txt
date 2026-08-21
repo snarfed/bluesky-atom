@@ -5,6 +5,7 @@
 #
 # Use this to bust that cache: gcloud -q beta app deploy --no-cache ...
 git+https://github.com/snarfed/flask-gae-static.git#egg=flask_gae_static
+git+https://github.com/snarfed/carbox.git#egg=carbox
 git+https://github.com/snarfed/granary.git#egg=granary
 git+https://github.com/snarfed/lexrpc.git#egg=lexrpc
 git+https://github.com/snarfed/mf2util.git#egg=mf2util
