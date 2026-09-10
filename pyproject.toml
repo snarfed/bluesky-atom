@@ -19,7 +19,7 @@ app = [
     # third-party
     'cachetools>=5.0.0',
     'flask>=3.0.0',
-    'google-cloud-ndb>=1.10.1',
+    'google-cloud-ndb>=2.6.0',
     'gunicorn>=20.1.0',
     'requests>=2.22',
     'ujson>=5.7.0',
