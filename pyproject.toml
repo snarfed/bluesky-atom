@@ -22,7 +22,7 @@ app = [
     'google-cloud-ndb>=2.6.0',
     'gunicorn>=20.1.0',
     'requests>=2.22',
-    'ujson>=5.7.0',
+    'ujson>=6.0.0',
 ]
 tests = [
     'requests-oauth2client>=1.8.0',
