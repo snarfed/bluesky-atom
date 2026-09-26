@@ -180,7 +180,7 @@ class BlueskyAtomTest(unittest.TestCase, Asserts):
     def test_oauth_finish_generate_feed_url_with_replies_reposts(self):
         with app.test_request_context('/'):
             ret = BlueskyCallback('-').finish(self.auth, state='replies=true&reposts=true')
-        self.assertIn('/feed?feed_id=123&replies=true&reposts=true"', ret)
+        self.assertIn('href="http://localhost/feed?feed_id=123&amp;replies=true&amp;reposts=true"', ret)
 
     def test_finish_declined(self):
         with patch.object(BlueskyCallback, 'dispatch_request',
