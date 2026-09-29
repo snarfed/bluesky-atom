@@ -17,10 +17,10 @@ app = [
     'pywebutil[google-cloud,html]',
 
     # third-party
-    'cachetools>=7.2.0',
+    'cachetools>=7.1.4',
     'flask>=3.0.0',
-    'google-cloud-ndb>=2.6.1',
-    'gunicorn>=26.2.0',
+    'google-cloud-ndb>=2.5.0',
+    'gunicorn>=26.0.0',
     'requests>=2.22',
     'ujson>=6.0.0',
 ]
