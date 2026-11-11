@@ -12,15 +12,16 @@ app = [
     # our own packages, used at head via the editable local checkouts in
     # [tool.uv.sources]; the deploy-time git refs are in requirements.txt
     'flask-gae-static',
-    'granary',
-    'oauth-dropins',
-    'pywebutil[google-cloud,html]',
+    'granary[bluesky]',
+    'oauth-dropins[bluesky]',
+    'pywebutil[google-cloud]',
 
     # third-party
     'cachetools>=7.1.4',
     'flask>=3.0.0',
     'google-cloud-ndb>=2.5.0',
     'gunicorn>=26.0.0',
+    'lxml>=6.0',
     'requests>=2.22',
     'ujson>=6.0.0',
 ]
@@ -50,5 +51,6 @@ secp256k1 =         { editable = true, path = "../secp256k1-py" }
 [tool.deptry.per_rule_ignores]
 DEP002 = [
     'gunicorn',
+    'lxml',
     'ujson',
 ]
